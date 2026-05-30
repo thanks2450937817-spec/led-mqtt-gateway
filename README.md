@@ -1,25 +1,32 @@
-# _Sample project_
+# 基于ESP32-S3的物联网网关（MQTT + OTA）
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+## 项目简介
+一个具备远程状态监控与固件自更新能力的工业物联网网关原型。
+- 硬件：ESP32-S3
+- 系统：FreeRTOS 多任务架构
+- 通信：MQTT 双向数据交互
+- 升级：A/B 分区安全 OTA（防变砖）
 
-This is the simplest buildable example. The example is used by command `idf.py create-project`
-that copies the project to user specified path and set it's name. For more information follow the [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project)
+## 系统架构
+![架构图](docs/architecture.png)  <!-- 如果有图的话 -->
 
+## 快速开始
+1. 安装 ESP-IDF v5.3
+2. 克隆本项目
+3. 进入 menuconfig 配置 WiFi SSID 和密码
+4. 编译烧录：`idf.py build flash monitor`
+5. 使用 MQTTX 连接 broker.emqx.io，订阅 `/led/status` 查看设备状态
 
+## OTA 升级测试
+1. 启动本地 HTTP 服务器：`python -m http.server 8070`
+2. 通过 MQTTX 向 `/led/ota` 发送固件 URL
+3. 设备自动下载、校验、重启
 
-## How to use example
-We encourage the users to use the example as a template for the new projects.
-A recommended way is to follow the instructions on a [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project).
-
-## Example folder contents
-
-The project **sample_project** contains one source file in C language [main.c](main/main.c). The file is located in folder [main](main).
-
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt`
-files that provide set of directives and instructions describing the project's source files and targets
-(executable, library, or both). 
-
-Below is short explanation of remaining files in the project folder.
+## 核心设计亮点
+- 三任务协同架构（主控、MQTT后台、OTA事务），通过队列和事件解耦
+- 事务性OTA写入（begin→write→end），任意步骤断电自动回滚
+- 指数退避重连机制，弱网环境自动恢复
+- 防御性编程，goto cleanup 统一资源管理
 
 ```
 ├── CMakeLists.txt
